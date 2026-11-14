@@ -49,12 +49,12 @@ export const ENDINGS_EVENTS = [
     // 비행기 엔딩은 공항에 정착해 있고, 연료와 공학자 동료를 모두 확보했을 때만 활성화한다.
     condition: (state) => !state.travelState && state.currentLocation === 'airport' && state.inventory.includes('gas_can') &&
       state.companions.some(c => c.id === 'engineer'),
-    text: "[탈출 기회] 공항에서 버려진 비행기를 발견했습니다. 연료는 확보했지만, 엔진을 점검하고 비행기를 안전하게 가동하려면 공학자 제민의 도움이 필요합니다.",
+    text: "[탈출 기회] 공항에서 버려진 비행기를 발견했습니다. 연료 탱크는 거의 비어 있지만, 챙겨 온 휘발유 캔을 보태면 이륙할 정도는 될 것 같습니다. 다만 엔진을 점검하고 안전하게 가동하려면 공학자 제민의 도움이 필요합니다.",
     choices: [
       {
-        text: "공학자와 함께 비행기에 연료를 주입하고 엔진을 가동한다!",
+        text: "공학자와 함께 휘발유 캔의 기름을 비행기에 옮겨 넣고 엔진을 가동한다!",
         action: () => {
-          return { itemsLost: ['gas_can'], flags: { triggerPlaneEnding: true }, log: "제민이 엔진을 점검한 뒤 연료를 주입합니다. 엔진이 굉음을 내며 비행기가 활주로를 달리기 시작합니다!" };
+          return { itemsLost: ['gas_can'], flags: { triggerPlaneEnding: true }, log: "제민이 엔진을 점검한 뒤 휘발유 캔의 기름을 연료 계통에 연결합니다. 엔진이 굉음을 내며 비행기가 활주로를 달리기 시작합니다!" };
         }
       }
     ]

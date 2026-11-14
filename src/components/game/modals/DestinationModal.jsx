@@ -28,7 +28,7 @@ export default function DestinationModal({ activeEvent, pendingDestination, setP
                   <span className="text-[#7892a5]">예상 이동 시간</span><span className="text-right text-sky-200">{pendingEstimate.hours}시간</span>
                   <span className="text-[#7892a5]">이동 수단</span><span className="text-right text-white">{pendingEstimate.travelMode}</span>
                   <span className="text-[#7892a5]">위험도</span><span className={`text-right font-bold ${pendingRisk === '매우 높음' ? 'text-red-300' : pendingRisk === '높음' ? 'text-orange-300' : 'text-amber-300'}`}>{pendingRisk}</span>
-                  <span className="text-[#7892a5]">예상 연료 소모</span><span className={`text-right ${pendingEstimate.resourceWarning ? 'text-amber-300' : 'text-rose-300'}`}>{pendingEstimate.resourceNote}</span>
+                  <span className="text-[#7892a5]">예상 소모</span><span className={`text-right ${pendingEstimate.resourceWarning ? 'text-amber-300' : 'text-rose-300'}`}>{pendingEstimate.resourceNote}</span>
                 </div>
               </div>
               {pendingEstimate.resourceWarning && <p className="text-[10px] text-amber-300 mb-3">주의: 현재 이동 수단의 연료가 부족할 수 있어 실제 이동은 도보로 처리될 수 있습니다.</p>}

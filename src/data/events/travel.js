@@ -1,17 +1,17 @@
 // 이동 중 이벤트
-import { VEHICLE_TYPES } from '../world';
+import { VEHICLE_TYPES, SUV_CRASH_FUEL_COST } from '../world';
 
 export const TRAVEL_EVENTS = [
   {
     id: 'travel_car_drive',
     condition: (state) => state.travelState && state.travelState.vehicleId === 'car' && state.vehicle?.id === 'car' && VEHICLE_TYPES[state.vehicle.id]?.name === '🚗 SUV 자동차' && Math.random() < 0.5,
-    text: "[이동 중 시나리오] 도로 중앙에 감염자 무리가 바글거립니다! 자동차 핸들을 강하게 쥐었습니다.",
+    text: "[이동 중 시나리오] 도로 중앙에 감염자 무리가 바글거립니다! 속도를 줄일 틈이 없습니다. 핸들을 강하게 쥐었습니다.",
     choices: [
       { text: "🚗 액셀을 밟아 그대로 들이받는다!", action: (inv, counters, trait, companions, vehicle) => {
-          if (vehicle?.id === 'car' && vehicle.cap >= 10) {
-            return { setVehicle: { ...vehicle, cap: Math.max(0, vehicle.cap - 10) }, log: "시원하게 감염자 무리를 갈아버리며 돌파했습니다! (SUV 연료 -10)" };
+          if (vehicle?.id === 'car' && vehicle.cap >= SUV_CRASH_FUEL_COST) {
+            return { setVehicle: { ...vehicle, cap: Math.max(0, vehicle.cap - SUV_CRASH_FUEL_COST) }, log: `급가속으로 감염자 무리를 들이받고 돌파했습니다! 무리하게 달린 탓에 연료가 더 소모됩니다. (SUV 연료 -${SUV_CRASH_FUEL_COST})` };
           }
-          return { stats: { health: -20 }, log: "SUV 연료가 부족해 차가 멈춰 시동이 꺼졌습니다! 급하게 탈출했습니다." };
+          return { stats: { health: -20 }, log: "연료가 부족해 가속이 붙지 않고 엔진이 덜컹거리며 멈췄습니다! 충돌 충격으로 부상을 입었지만 간신히 시동을 다시 걸어 빠져나왔습니다." };
       }},
       { text: "차량 속도를 줄이고 우회로를 찾는다.", action: () => {
           return { addTravelTime: 1, log: "골목길로 우회하여 경로를 변경했습니다. 이동 시간이 1시간 추가됩니다." };

@@ -81,7 +81,7 @@ export default function TravelPanel({ currentLocation, isPlaying, activeEvent, r
                     <span className="text-slate-400">예상 시간</span><span className="text-right text-sky-200">{hoverEstimate.hours}시간</span>
                     <span className="text-slate-400">이동 수단</span><span className="text-right text-slate-100">{hoverEstimate.travelMode}</span>
                     <span className="text-slate-400">위험도</span><span className={`text-right font-bold ${risk[1]}`}>{risk[0]}</span>
-                    <span className="text-slate-400">소모 연료</span><span className={`text-right ${hoverEstimate.resourceWarning ? 'text-amber-300' : 'text-rose-300'}`}>{hoverEstimate.resourceNote}</span>
+                    <span className="text-slate-400">예상 소모</span><span className={`text-right ${hoverEstimate.resourceWarning ? 'text-amber-300' : 'text-rose-300'}`}>{hoverEstimate.resourceNote}</span>
                   </div>
                 </div>
               );

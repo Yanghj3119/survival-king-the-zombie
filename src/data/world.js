@@ -89,9 +89,21 @@ export const RESPAWN_LOCATIONS = [
   { id: 'highway', name: '버려진 고속도로', log: "뒤얽힌 고속도로 차 안에서 깨어났습니다." }
 ];
 
+// 연료·배터리는 모두 정수 단위다. (예: SUV 연료 10, 도로 거리 1칸당 1 소모)
+// - maxCap: 최대치(= 갈 수 있는 최대 도로 거리) / costPerDist: 도로 거리 1칸당 소모량
+// - startCap: 이동수단을 처음 얻을 때 연료
+// - 자전거(stamina)는 연료가 없고 costPerDist 가 허기·체력 소모량이다.
 export const VEHICLE_TYPES = {
   bicycle: { name: '🚲 자전거', speedMult: 0.5, type: 'stamina', costPerDist: 4, desc: '기름이 필요 없지만 허기와 체력을 추가 소모합니다.' },
-  kickboard: { name: '🛴 전동 킥보드', speedMult: 0.4, type: 'battery', maxCap: 100, costPerDist: 8, desc: '빠르고 조용하지만 배터리가 소모됩니다.' },
-  motorcycle: { name: '🏍️ 오토바이', speedMult: 0.3, type: 'fuel', maxCap: 100, costPerDist: 7, desc: '기능이 뛰어나며 기름을 사용합니다.' },
-  car: { name: '🚗 SUV 자동차', speedMult: 0.25, type: 'fuel', maxCap: 100, costPerDist: 5, desc: '안전하고 대량 파밍 가능. 연료 효율이 개선되었습니다.' }
+  kickboard: { name: '🛴 전동 킥보드', speedMult: 0.4, type: 'battery', maxCap: 12, startCap: 7, costPerDist: 1, desc: '빠르고 조용하지만 배터리가 소모됩니다.' },
+  motorcycle: { name: '🏍️ 오토바이', speedMult: 0.3, type: 'fuel', maxCap: 14, startCap: 7, costPerDist: 1, desc: '기동성이 좋고 좁은 길도 지나갈 수 있지만 기름을 사용합니다.' },
+  car: { name: '🚗 SUV 자동차', speedMult: 0.25, type: 'fuel', maxCap: 20, startCap: 8, costPerDist: 1, desc: '튼튼해서 비교적 안전하고, 연료 탱크가 가장 커서 멀리 갈 수 있습니다.' }
 };
+
+// 아이템 1개로 회복되는 양. 차량 종류와 상관없이 항상 일정하다. (최대치를 넘으면 최대치까지만 채워진다)
+export const GAS_CAN_REFILL = 10;      // 휘발유 캔 1개: 오토바이·SUV 공통
+export const BATTERY_PACK_REFILL = 5;   // 휴대용 배터리 1개: 킥보드
+
+// 남은 연료가 최대치의 10% 이하(최소 1)가 되면 보유한 연료 아이템을 자동 사용한다.
+export const getAutoRefuelThreshold = (vehicleId) => Math.max(1, Math.floor((VEHICLE_TYPES[vehicleId]?.maxCap || 0) * 0.1));
+export const SUV_CRASH_FUEL_COST = 2;    // SUV 돌진 이벤트 연료 소모

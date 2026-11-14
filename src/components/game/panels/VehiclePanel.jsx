@@ -17,11 +17,14 @@ export default function VehiclePanel({ vehicle, setVehicle }) {
           {VEHICLE_TYPES[vehicle.id]?.type !== 'stamina' && (
             <div className="space-y-1">
               <div className="flex justify-between text-[10px]">
-                <span>남은 연료</span>
-                <span className="font-bold text-[#a67c00]">{vehicle.cap}%</span>
+                <span>{VEHICLE_TYPES[vehicle.id]?.type === 'battery' ? '남은 배터리' : '남은 연료'}</span>
+                <span className="font-bold text-[#a67c00]">{vehicle.cap} / {VEHICLE_TYPES[vehicle.id]?.maxCap}</span>
               </div>
-              <div className="w-full bg-[#1a1111] h-1.5 border border-[#3a1f1f]">
-                <div className="bg-[#a67c00] h-full transition-all duration-300" style={{ width: `${vehicle.cap}%` }}></div>
+              {/* 연료 1칸 = 막대 1칸. 정수 단위로 칸을 나눠 보여준다. */}
+              <div className="flex gap-0.5">
+                {Array.from({ length: VEHICLE_TYPES[vehicle.id]?.maxCap || 0 }, (_, i) => (
+                  <div key={i} className={`h-1.5 flex-1 border border-[#3a1f1f] transition-colors duration-300 ${i < vehicle.cap ? 'bg-[#a67c00]' : 'bg-[#1a1111]'}`}></div>
+                ))}
               </div>
             </div>
           )}

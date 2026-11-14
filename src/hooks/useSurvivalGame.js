@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { MAX_LOGS, BASE_INVENTORY_SIZE, WEAPONS, weaponMaxDurability } from '../data/config';
 import { TRAITS_POOL, START_ITEMS_POOL } from '../data/player';
 import { NORMAL_LOGS } from '../data/messages';
-import { LOCATIONS, getRoadRoute, RESPAWN_LOCATIONS, VEHICLE_TYPES } from '../data/world';
+import { LOCATIONS, getRoadRoute, RESPAWN_LOCATIONS, VEHICLE_TYPES, GAS_CAN_REFILL, BATTERY_PACK_REFILL, getAutoRefuelThreshold } from '../data/world';
 import { EVENTS } from '../data/events';
 import useGameAudio from './useGameAudio';
 import { getLogCategory, LOG_TONES } from '../lib/logTones';
@@ -191,13 +191,13 @@ export default function useSurvivalGame() {
       }
     }
 
-    if (vehicle && VEHICLE_TYPES[vehicle.id]?.type !== 'stamina' && vehicle.cap < 10) {
+    if (vehicle && VEHICLE_TYPES[vehicle.id]?.type !== 'stamina' && vehicle.cap <= getAutoRefuelThreshold(vehicle.id)) {
       if ((vehicle.id === 'motorcycle' || vehicle.id === 'car') && inventory.includes('gas_can')) {
         handleCraftingUse('refuel_vehicle');
-        setLogs(prev => [...prev, { timeStr: formatTime(counters.totalHours), text: "⚠️ [자동 사용] 차량 연료 부족(10% 미만)! [휘발유 캔]을 자동으로 주유했습니다.", type: 'event' }].slice(-MAX_LOGS));
+        setLogs(prev => [...prev, { timeStr: formatTime(counters.totalHours), text: `⚠️ [자동 사용] 차량 연료 부족(${vehicle.cap}/${VEHICLE_TYPES[vehicle.id].maxCap})! [휘발유 캔]을 자동으로 주유했습니다.`, type: 'event' }].slice(-MAX_LOGS));
       } else if (vehicle.id === 'kickboard' && inventory.includes('battery_pack')) {
         handleCraftingUse('charge_kickboard');
-        setLogs(prev => [...prev, { timeStr: formatTime(counters.totalHours), text: "⚠️ [자동 사용] 킥보드 배터리 부족(10% 미만)! [휴대용 배터리]를 자동으로 충전했습니다.", type: 'event' }].slice(-MAX_LOGS));
+        setLogs(prev => [...prev, { timeStr: formatTime(counters.totalHours), text: `⚠️ [자동 사용] 킥보드 배터리 부족(${vehicle.cap}/${VEHICLE_TYPES[vehicle.id].maxCap})! [휴대용 배터리]를 자동으로 충전했습니다.`, type: 'event' }].slice(-MAX_LOGS));
       }
     }
   }, [stats, vehicle, inventory, gameState, counters.totalHours, trait]);
@@ -256,7 +256,8 @@ export default function useSurvivalGame() {
                 if (travelState.vehicleId && vehicle && vehicle.id === travelState.vehicleId) {
                   const arrivalVehicleData = VEHICLE_TYPES[travelState.vehicleId];
                   if (arrivalVehicleData && arrivalVehicleData.type !== 'stamina') {
-                    const finalCost = Math.max(0, travelState.distanceRemaining || 0) * arrivalVehicleData.costPerDist;
+                    const finalRawCost = Math.max(0, travelState.distanceRemaining || 0) * arrivalVehicleData.costPerDist + (travelState.fuelCarry || 0);
+                    const finalCost = Math.ceil(finalRawCost - 1e-9);
                     const finalCap = Math.max(0, vehicle.cap - finalCost);
                     setVehicle(finalCap <= 0 ? null : { ...vehicle, cap: finalCap });
                   }
@@ -423,9 +424,14 @@ export default function useSurvivalGame() {
 
         if (travelState.vehicleId && vehicle && vehicle.id === travelState.vehicleId) {
           const vehicleData = VEHICLE_TYPES[travelState.vehicleId];
-          const gaugeCost = vehicleData && vehicleData.type !== 'stamina'
-            ? distanceCovered * vehicleData.costPerDist
-            : 0;
+          // 연료는 정수 단위로만 줄어든다. 틱마다 이동한 거리의 소수점 소모분은 fuelCarry 에 모아 두었다가
+          // 1 이상 쌓이면 차감하고, 도착하는 마지막 틱에는 남은 소수점을 올림해 총 소모량이 정수가 되게 한다.
+          let gaugeCost = 0;
+          if (vehicleData && vehicleData.type !== 'stamina') {
+            const rawCost = distanceCovered * vehicleData.costPerDist + (travelState.fuelCarry || 0);
+            gaugeCost = newHoursLeft <= 0 ? Math.ceil(rawCost - 1e-9) : Math.floor(rawCost + 1e-9);
+            updatedTravelState = { ...updatedTravelState, fuelCarry: newHoursLeft <= 0 ? 0 : rawCost - gaugeCost };
+          }
           const nextCap = Math.max(0, vehicle.cap - gaugeCost);
           if (vehicleData && vehicleData.type !== 'stamina' && nextCap <= 0) {
             setVehicle(null);
@@ -440,7 +446,7 @@ export default function useSurvivalGame() {
               vehicleTravelHours: 0,
               speedMult: 1
             };
-            setLogs(l => [...l, { timeStr: formatTime(newHours), text: `⚠️ ${vehicleData.name}의 연료가 모두 소모되어 이동수단을 잃었습니다. 남은 구간은 도보로 이동합니다.`, type: 'event' }].slice(-MAX_LOGS));
+            setLogs(l => [...l, { timeStr: formatTime(newHours), text: `⚠️ ${vehicleData.type === 'battery' ? '배터리' : '연료'}가 없어 운송수단을 이용하지 못합니다.`, type: 'event' }].slice(-MAX_LOGS));
           } else if (vehicleData && vehicleData.type !== 'stamina') {
             setVehicle(v => v && v.id === travelState.vehicleId ? { ...v, cap: nextCap } : v);
           }
@@ -896,7 +902,7 @@ export default function useSurvivalGame() {
     const vData = vehicle ? VEHICLE_TYPES[vehicle.id] : null;
     let hours = baseHours;
     let travelMode = '도보';
-    let resourceNote = '추가 연료 소모 없음';
+    let resourceNote = '추가 소모 없음';
     let resourceWarning = false;
 
     if (!isCurrent && vData) {
@@ -913,9 +919,9 @@ export default function useSurvivalGame() {
       } else if (vehicle.cap >= cost) {
         hours = Math.max(1, Math.round(baseHours * vData.speedMult));
         travelMode = vData.name;
-        resourceNote = `${vData.type === 'fuel' ? '연료' : '배터리'} ${cost} 소모 · 보유 ${Math.floor(vehicle.cap)}`;
+        resourceNote = `${vData.type === 'fuel' ? '연료' : '배터리'} ${cost} 소모 · 보유 ${vehicle.cap}/${vData.maxCap}`;
       } else {
-        resourceNote = `${vData.name} 연료 부족 (${Math.floor(vehicle.cap)}/${cost}) · 도보 이동`;
+        resourceNote = `${vData.name} ${vData.type === 'fuel' ? '연료' : '배터리'} 부족 (보유 ${vehicle.cap} / 필요 ${cost}) · 도보 이동`;
         resourceWarning = true;
       }
     }
@@ -979,10 +985,10 @@ export default function useSurvivalGame() {
         actualSpeedMult = vData.speedMult;
         travelVehicleId = vehicle.id;
         travelVehicleCost = cost;
-        vehicleStatusNote = ` (${vData.name} 이동: 목적지까지 필요한 연료 사용)`;
+        vehicleStatusNote = ` (${vData.name} 이동: 목적지까지 필요한 ${vData.type === 'battery' ? '배터리' : '연료'}를 사용합니다)`;
       } else {
         actualTravelTime = baseHours;
-        vehicleStatusNote = ` (⚠️ ${vData.name}의 연료가 목적지까지 부족해 도보 이동)`;
+        vehicleStatusNote = ` (⚠️ ${vData.name}의 ${vData.type === 'battery' ? '배터리' : '연료'}가 목적지까지 부족해 도보로 이동합니다)`;
       }
     }
 
@@ -1026,8 +1032,8 @@ export default function useSurvivalGame() {
       soap: { action: 'use_soap', title: '비누 사용', effect: '위생 +45, 정신력 +5.' },
       wet_wipes: { action: 'use_wipes', title: '물티슈 사용', effect: '위생 +30.' },
       drinking_water: { action: 'drink_water', title: '식수 마시기', effect: '포만감 +10, 정신력 +2.' },
-      gas_can: { action: 'refuel_vehicle', title: '휘발유 주유', effect: '보유 차량의 연료를 최대 50만큼 회복합니다.' },
-      battery_pack: { action: 'charge_kickboard', title: '배터리 팩 사용', effect: '전동 킥보드의 배터리를 최대 40만큼 회복합니다.' },
+      gas_can: { action: 'refuel_vehicle', title: '휘발유 주유', effect: `오토바이나 자동차의 연료를 ${GAS_CAN_REFILL}만큼 채웁니다. (최대치까지)` },
+      battery_pack: { action: 'charge_kickboard', title: '배터리 팩 사용', effect: `전동 킥보드의 배터리를 ${BATTERY_PACK_REFILL}만큼 충전합니다. (최대치까지)` },
       pet_food: { action: 'feed_pet', title: '동료 동물에게 사료 주기', effect: '군견 또는 길고양이 동료의 충성도와 호감도를 최대로 회복하고, 정신력 +25.' },
       soju: { action: 'use_soju', title: '소주 마시기', effect: '정신력 +20, 건강 -5. 공포를 잠시 잊지만 몸에 부담이 됩니다.' },
       coffee: { action: 'use_coffee', title: '캔커피 섭취', effect: '정신력 +15, 포만감 +5.' },
@@ -1084,10 +1090,10 @@ export default function useSurvivalGame() {
       setStats(prev => ({ ...prev, hunger: Math.min(100, prev.hunger + 10), mental: Math.min(100, prev.mental + 2) }));
     } else if (actionType === 'refuel_vehicle') {
       setInventory(prev => { const newInv = [...prev]; newInv.splice(newInv.indexOf('gas_can'), 1); return newInv; });
-      setVehicle(v => ({ ...v, cap: Math.min(100, v.cap + 50) }));
+      setVehicle(v => ({ ...v, cap: Math.min(VEHICLE_TYPES[v.id].maxCap, v.cap + GAS_CAN_REFILL) }));
     } else if (actionType === 'charge_kickboard') {
       setInventory(prev => { const newInv = [...prev]; newInv.splice(newInv.indexOf('battery_pack'), 1); return newInv; });
-      setVehicle(v => ({ ...v, cap: Math.min(100, v.cap + 40) }));
+      setVehicle(v => ({ ...v, cap: Math.min(VEHICLE_TYPES[v.id].maxCap, v.cap + BATTERY_PACK_REFILL) }));
     } else if (actionType === 'use_soju') {
       setInventory(prev => { const newInv = [...prev]; newInv.splice(newInv.indexOf('soju'), 1); return newInv; });
       setStats(prev => ({ ...prev, mental: Math.min(100, prev.mental + 20), health: Math.max(0, prev.health - 5) }));
@@ -1109,8 +1115,8 @@ export default function useSurvivalGame() {
       use_soap: '위생 +45, 정신력 +5 · 비누 1개 소모',
       use_wipes: '위생 +30 · 물티슈 1개 소모',
       drink_water: '갈증 완화 · 식수 1개 소모',
-      refuel_vehicle: '차량 연료 +50 · 휘발유 캔 1개 소모',
-      charge_kickboard: '킥보드 배터리 +40 · 배터리 팩 1개 소모',
+      refuel_vehicle: `차량 연료 +${GAS_CAN_REFILL} · 휘발유 캔 1개 소모`,
+      charge_kickboard: `킥보드 배터리 +${BATTERY_PACK_REFILL} · 배터리 팩 1개 소모`,
       use_soju: '정신력 +20, 건강 -5 · 소주 1개 소모',
       use_coffee: '정신력 +20, 포만감 +10 · 캔커피 1개 소모',
       feed_pet: '동물 동료 충성도·호감도 최대 회복, 정신력 +25 · 사료 1개 소모'
