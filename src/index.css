@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.ending-art-bg { position: relative; isolation: isolate; background: transparent !important; min-height: 100vh; width: 100%; max-width: none !important; align-items: center !important; justify-content: center !important; padding: 1.25rem !important; }
+.ending-art-bg::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: linear-gradient(90deg, rgba(5,7,10,.08) 0%, rgba(5,7,10,.18) 42%, rgba(5,7,10,.78) 62%, rgba(5,7,10,.94) 100%), linear-gradient(180deg, rgba(5,7,10,.12), rgba(5,7,10,.50)); }
+.ending-art-bg .ending-background-art { position: fixed !important; inset: 0 !important; z-index: -2 !important; width: 100vw !important; height: 100vh !important; max-width: none !important; max-height: none !important; object-fit: cover !important; object-position: center !important; border: 0 !important; border-radius: 0 !important; margin: 0 !important; opacity: .94; }
+.ending-art-bg > :not(.ending-background-art) { position: relative; z-index: 1; width: min(92vw, 1000px); margin-left: auto; margin-right: auto; text-align: center; }
+.ending-art-bg h1 { width: min(92vw, 1000px); margin-left: auto; margin-right: auto; font-size: clamp(1.8rem, 3.3vw, 3.5rem) !important; line-height: 1.12; text-align: center !important; }
+.ending-art-bg h2 { text-align: center !important; }
+.ending-art-bg button { width: min(92vw, 1000px); margin-left: auto; margin-right: auto; }
+@media (max-width: 760px) {
+  .ending-art-bg { padding: .85rem !important; justify-content: center !important; }
+  .ending-art-bg::before { background: linear-gradient(180deg, rgba(5,7,10,.12), rgba(5,7,10,.70) 35%, rgba(5,7,10,.96) 100%); }
+  .ending-art-bg > :not(.ending-background-art), .ending-art-bg button { width: 100%; margin-left: auto; margin-right: auto; text-align: center; }
+  .ending-art-bg .ending-background-art { object-position: 38% center !important; }
+  .ending-art-bg h1 { width: 100%; margin-left: auto; margin-right: auto; font-size: clamp(1.65rem, 7vw, 2.5rem) !important; text-align: center !important; }
+}
+.ending-art-panel { background-color: rgba(10, 13, 18, .86) !important; backdrop-filter: blur(3px); }
+
+body { 
+    font-family: 'Noto Sans KR', sans-serif; 
+    margin: 0; 
+    background-color: #0a0505; 
+    color: #f8f8f2; 
+}
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: #110b0b; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #3a1f1f; border-radius: 3px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #d84b4b; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.animate-fade-in { animation: fadeIn 0.8s ease-out forwards; }
