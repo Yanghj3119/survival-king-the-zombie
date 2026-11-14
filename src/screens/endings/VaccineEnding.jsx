@@ -5,6 +5,7 @@ export default function VaccineEnding({ player, inventory, companions, currentLo
       <div className="min-h-screen flex flex-col items-center justify-center p-6 font-sans animate-fade-in ending-art-bg max-w-2xl mx-auto">
         <h1 className="text-5xl md:text-6xl font-black text-[#5a86b5] mb-2 tracking-widest">인류의 영웅</h1>
         <h2 className="text-xl font-bold text-[#f8f8f2] mb-4">생존자: {player.name}</h2>
+        <img src="./media/ending-vaccine.jpg" alt="완성된 백신을 높이 든 생존자들과 새벽빛이 비치는 도시" className="w-full max-h-[340px] object-contain rounded-md border border-[#5a86b5] mb-4 ending-background-art" />
         <div className="bg-[#17232e] border-2 border-[#5a86b5] p-5 w-full text-center mb-6 shadow-xl space-y-2">
           <div className="text-xs font-bold text-[#5a86b5] tracking-wider uppercase">🧪 구원 성공: 백신 전달 완수</div>
           <p className="text-sm md:text-base text-[#f8f8f2] font-bold italic leading-relaxed break-keep">
